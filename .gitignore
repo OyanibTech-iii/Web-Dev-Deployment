@@ -29,3 +29,8 @@ yarn-error.log
 ###> lexik/jwt-authentication-bundle ###
 /config/jwt/*.pem
 ###< lexik/jwt-authentication-bundle ###
+
+### Credentials and Secrets ###
+CRE.YAML
+.env.local
+config/secrets/*.private.php
