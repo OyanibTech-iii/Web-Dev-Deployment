@@ -172,14 +172,17 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 }
 
 func main() {
-	redisAddr := os.Getenv("REDIS_ADDR")
-	if redisAddr == "" {
-		redisAddr = "localhost:6379"
+	redisURL := os.Getenv("REDIS_URL")
+	if redisURL == "" {
+		redisURL = "redis://localhost:6379"
 	}
 
-	rdb := redis.NewClient(&redis.Options{
-		Addr: redisAddr,
-	})
+	opt, err := redis.ParseURL(redisURL)
+	if err != nil {
+		log.Fatalf("Error parsing REDIS_URL: %v", err)
+	}
+
+	rdb := redis.NewClient(opt)
 
 	hub := newHub(rdb)
 	go hub.run()
@@ -197,6 +200,11 @@ func main() {
 		ServeNotificationsWs(notificationHub, w, r)
 	})
 
-	fmt.Printf("Chat microservice running on :8080 (Redis: %s)\n", redisAddr)
-	log.Fatal(http.ListenAndServe(":8080", nil))
+	port := os.Getenv("PORT")
+	if port == "" {
+		port = "8080"
+	}
+
+	fmt.Printf("Chat microservice running on :%s (Redis: %s)\n", port, opt.Addr)
+	log.Fatal(http.ListenAndServe(":"+port, nil))
 }

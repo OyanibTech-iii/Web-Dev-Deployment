@@ -6,7 +6,7 @@ services:
     image: platform-b
     container_name: platform_b_container
     ports:
-      - "9000:80"
+      - "8000:80"
     volumes:
       - ./src:/app/src
       - ./templates:/app/templates
