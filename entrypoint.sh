@@ -14,6 +14,9 @@ PHP_PID=$!
 echo "Waiting for PHP-FPM to start..."
 sleep 2
 
+echo "Running migrations..."
+php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration || true
+
 echo "Starting Nginx..."
 nginx -g "daemon off;"
 
