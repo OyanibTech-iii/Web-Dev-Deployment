@@ -23,11 +23,15 @@ ENV COMPOSER_ALLOW_SUPERUSER=1
 # Copy dependency manifests first to leverage Docker caching.
 COPY composer.json composer.lock ./
 
-# Install PHP dependencies without executing project scripts yet.
-RUN composer install --no-interaction --no-scripts --optimize-autoloader
+# Install PHP dependencies including redis-messenger
+RUN composer install --no-interaction --no-scripts --optimize-autoloader && \
+    composer require symfony/redis-messenger --no-interaction
 
 # Copy the application source after dependencies are cached.
 COPY . .
+
+# Install frontend dependencies and build assets
+RUN npm install && npm run build
 
 # Create a default .env file if one does not already exist.
 RUN if [ ! -f /app/.env ]; then \
