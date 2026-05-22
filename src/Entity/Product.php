@@ -15,6 +15,10 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
+use ApiPlatform\Doctrine\Orm\Filter\BooleanFilter;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ApiResource(
@@ -30,9 +34,12 @@ use Symfony\Component\Serializer\Attribute\Groups;
     ],
     denormalizationContext: [
         'groups' => ['product:write']
-    ]
+    ],
+    order: ['id' => 'DESC']
 )]
-
+#[ApiFilter(OrderFilter::class, properties: ['id', 'price', 'name'], arguments: ['orderParameterName' => 'order'])]
+#[ApiFilter(SearchFilter::class, properties: ['name' => 'partial', 'description' => 'partial'])]
+#[ApiFilter(BooleanFilter::class, properties: ['isAvailable'])]
 #[ORM\Entity(repositoryClass: ProductRepository::class)]
 class Product
 {
@@ -75,6 +82,7 @@ class Product
      * @var Collection<int, Stock>
      */
     #[ORM\ManyToMany(targetEntity: Stock::class, mappedBy: 'products')]
+    #[Groups(['product:read'])]
     private Collection $stocks;
 
     /**

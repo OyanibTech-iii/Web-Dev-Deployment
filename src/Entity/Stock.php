@@ -13,6 +13,9 @@ use ApiPlatform\Metadata\Post;
 use ApiPlatform\Metadata\Put;
 use ApiPlatform\Metadata\Delete;
 use ApiPlatform\Metadata\GetCollection;
+use ApiPlatform\Metadata\ApiFilter;
+use ApiPlatform\Doctrine\Orm\Filter\OrderFilter;
+use ApiPlatform\Doctrine\Orm\Filter\SearchFilter;
 use Symfony\Component\Serializer\Attribute\Groups;
 
 #[ApiResource(
@@ -28,35 +31,36 @@ use Symfony\Component\Serializer\Attribute\Groups;
     ],
     denormalizationContext: [
         'groups' => ['stock:write']
-    ]
+    ],
+    order: ['id' => 'DESC']
 )]
-
-
+#[ApiFilter(OrderFilter::class, properties: ['id', 'Quantity', 'stockType'], arguments: ['orderParameterName' => 'order'])]
+#[ApiFilter(SearchFilter::class, properties: ['stockType' => 'exact'])]
 #[ORM\Entity(repositoryClass: StockRepository::class)]
 class Stock
 {
     #[ORM\Id]
     #[ORM\GeneratedValue]
     #[ORM\Column]
-    #[Groups(['stock:read', 'stock:write'])]
+    #[Groups(['stock:read', 'stock:write', 'product:read'])]
     private ?int $id = null;
 
     #[ORM\Column]
-    #[Groups(['stock:read', 'stock:write'])]
+    #[Groups(['stock:read', 'stock:write', 'product:read'])]
 
     private ?int $Quantity = null;
 
     // ADD THESE NEW FIELDS:
     #[ORM\Column(type: 'datetime', nullable: true)]
-    #[Groups(['stock:read', 'stock:write'])]
+    #[Groups(['stock:read', 'stock:write', 'product:read'])]
     private ?\DateTimeInterface $createdAt = null;
 
     #[ORM\Column(type: 'datetime', nullable: true)]
-    #[Groups(['stock:read', 'stock:write'])]
+    #[Groups(['stock:read', 'stock:write', 'product:read'])]
     private ?\DateTimeInterface $updatedAt = null;
 
     #[ORM\Column(length: 50, nullable: true)]
-    #[Groups(['stock:read', 'stock:write'])]
+    #[Groups(['stock:read', 'stock:write', 'product:read'])]
     private ?string $stockType = null;
 
     #[ORM\Column(nullable: true)]
