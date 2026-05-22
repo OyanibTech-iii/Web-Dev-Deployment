@@ -11,6 +11,7 @@
         "api-platform/symfony": "^4.2",
         "doctrine/dbal": "^3",
         "doctrine/doctrine-bundle": "^2.16",
+        "doctrine/doctrine-fixtures-bundle": "^4.3",
         "doctrine/doctrine-migrations-bundle": "^3.7",
         "doctrine/orm": "^3.5",
         "knplabs/knp-paginator-bundle": "^6.10",
