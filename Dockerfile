@@ -36,6 +36,9 @@ COPY . .
 # Install frontend dependencies and build assets
 RUN npm install && npm run build
 
+# Prepare frontend importmap assets for Symfony.
+RUN php bin/console importmap:install --no-interaction
+
 # Create a default .env file if one does not already exist.
 RUN if [ ! -f /app/.env ]; then \
     DB_URL=${DATABASE_URL:-${MYSQL_URL:-mysql://root@127.0.0.1:3306/app_db?serverVersion=8.0}}; \
