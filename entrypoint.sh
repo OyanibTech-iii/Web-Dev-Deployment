@@ -14,6 +14,13 @@ PHP_PID=$!
 echo "Waiting for PHP-FPM to start..."
 sleep 2
 
+# Ensure JWT keys exist
+if [ ! -f config/jwt/private.pem ]; then
+    echo "Generating JWT keys..."
+    mkdir -p config/jwt
+    php bin/console lexik:jwt:generate-keypair --no-interaction || echo "Warning: Failed to generate JWT keys"
+fi
+
 echo "Running migrations..."
 php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration || true
 
