@@ -11,7 +11,10 @@ RUN apt-get update && apt-get install -y \
     curl \
     nodejs \
     npm \
+    libpq-dev \
     && docker-php-ext-install pdo pdo_mysql \
+    && pecl install redis \
+    && docker-php-ext-enable redis \
     && rm -rf /var/lib/apt/lists/*
 
 # Install Composer globally so Composer commands are available.
