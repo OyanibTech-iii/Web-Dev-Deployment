@@ -17,6 +17,9 @@ sleep 2
 echo "Running migrations..."
 php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration || true
 
+echo "Loading fixtures..."
+php bin/console doctrine:fixtures:load --append --no-interaction || true
+
 echo "Starting Nginx..."
 nginx -g "daemon off;"
 
