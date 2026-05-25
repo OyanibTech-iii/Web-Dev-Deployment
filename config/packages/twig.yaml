@@ -7,6 +7,7 @@ twig:
         ACTIVATION_PUBLIC_KEY: '%env(ACTIVATION_PUBLIC_KEY)%'
         ACTIVATION_SERVICE_ID: '%env(ACTIVATION_SERVICE_ID)%'
         ACTIVATION_TEMPLATE_ID: '%env(ACTIVATION_TEMPLATE_ID)%'
+        chat_ws_url: '%chat_ws_url%'
 
 when@test:
     twig:

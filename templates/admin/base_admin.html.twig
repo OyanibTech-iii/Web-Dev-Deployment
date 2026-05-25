@@ -157,7 +157,8 @@
                                 if (!badge) return;
 
                                 function connect() {
-                                    const socket = new WebSocket('ws://' + window.location.hostname + ':8080/notifications-ws');
+                                    const wsUrl = "{{ chat_ws_url|escape('js') }}";
+                                    const socket = new WebSocket(`${wsUrl}/notifications-ws`);
 
                                     socket.onmessage = function(event) {
                                         try {
