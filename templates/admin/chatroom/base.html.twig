@@ -265,38 +265,32 @@
             const userName = "{{ app.user.firstName|escape('js') }}";
             const userImage = "{{ app.user.profileImage ? asset(app.user.profileImage)|escape('js') : '' }}";
 
-            const wsUrl = "{{ chat_ws_url|escape('js') }}";
-            let socket;
+const socket = new
+     WebSocket(`wss://stunning-compassion-production-f5b5.up.railway.app/ws?user_id=${userId}&room_id=${roomId}`);
+            let typingTimeout;
+            let lastTypingSent = 0;
 
-            function connect() {
-                socket = new WebSocket(`${wsUrl}/ws?user_id=${userId}&room_id=${roomId}`);
+            socket.onopen = function () {
+                console.log('Connected to chat server');
+            };
 
-                socket.onopen = function () {
-                    console.log('Connected to chat server');
-                };
+            socket.onclose = function () {
+                console.error('Disconnected from chat server');
+            };
 
-                socket.onclose = function () {
-                    console.error('Disconnected from chat server. Reconnecting in 5s...');
-                    setTimeout(connect, 5000);
-                };
+            socket.onerror = function (err) {
+                console.error('WebSocket error:', err);
+            };
 
-                socket.onerror = function (err) {
-                    console.error('WebSocket error:', err);
-                    socket.close();
-                };
-
-                socket.onmessage = function (event) {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'typing') {
-                        showTypingIndicator(data);
-                    } else {
-                        appendMessage(data);
-                        removeTypingIndicator(data.sender_id);
-                    }
-                };
-            }
-
-            connect();
+            socket.onmessage = function (event) {
+                const data = JSON.parse(event.data);
+                if (data.type === 'typing') {
+                    showTypingIndicator(data);
+                } else {
+                    appendMessage(data);
+                    removeTypingIndicator(data.sender_id);
+                }
+            };
 
             messageInput.addEventListener('input', function () {
                 const now = Date.now();

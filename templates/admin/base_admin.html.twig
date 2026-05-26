@@ -157,9 +157,7 @@
                                 if (!badge) return;
 
                                 function connect() {
-                                    const wsUrl = "{{ chat_ws_url|escape('js') }}";
-                                    const socket = new WebSocket(`${wsUrl}/notifications-ws`);
-
+const socket = new WebSocket('wss://stunning-compassion-production-f5b5.up.railway.app/notifications-ws');
                                     socket.onmessage = function(event) {
                                         try {
                                             const data = JSON.parse(event.data);

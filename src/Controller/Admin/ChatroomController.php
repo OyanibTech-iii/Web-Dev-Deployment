@@ -91,7 +91,6 @@ class ChatroomController extends AbstractController
             'admins' => $admins,
             'chatroom' => $chatroom,
             'messages' => $messages,
-            'chat_ws_url' => $this->getParameter('chat_ws_url'),
         ]);
     }
 
