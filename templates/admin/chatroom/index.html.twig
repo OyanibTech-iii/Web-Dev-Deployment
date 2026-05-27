@@ -138,7 +138,7 @@
             <!-- User Items -->
             {% for u in users %}
                 {% if u != app.user %}
-                    <a href="{{ path('app_chatroom_private', {id: u.id}) }}" class="carousel-item">
+                    <a href="{{ path('app_admin_chatroom_private', {id: u.id}) }}" class="carousel-item">
                         <div class="avatar-wrapper {{ selectedUser and selectedUser.id == u.id ? 'active' : '' }}">
                             {% if u.profileImage %}
                                 <img src="{{ asset(u.profileImage) }}" alt="{{ u.firstName }}" class="w-full h-full rounded-full object-cover">
