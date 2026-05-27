@@ -35,7 +35,7 @@ class ChatMessageHandler
 
         if ($chatroomId && $senderId) {
             $this->adminChatService->handleMessage(
-                (int)$chatroomId,
+                $chatroomId,
                 (int)$senderId,
                 $message->getContent()
             );

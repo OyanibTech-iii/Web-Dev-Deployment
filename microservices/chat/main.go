@@ -22,7 +22,7 @@ var upgrader = websocket.Upgrader{
 }
 
 type Message struct {
-	ChatroomID  int    `json:"chatroom_id"`
+	ChatroomID  string `json:"chatroom_id"`
 	SenderID    int    `json:"sender_id"`
 	SenderName  string `json:"sender_name"`
 	SenderImage string `json:"sender_image"`
@@ -32,14 +32,14 @@ type Message struct {
 
 type Client struct {
 	ID         int
-	ChatroomID int
+	ChatroomID string
 	Conn       *websocket.Conn
 	Send       chan Message
 }
 
 type Hub struct {
 	// Registered clients by ChatroomID
-	Rooms      map[int]map[*Client]bool
+	Rooms      map[string]map[*Client]bool
 	Broadcast  chan Message
 	Register   chan *Client
 	Unregister chan *Client
@@ -49,7 +49,7 @@ type Hub struct {
 
 func newHub(rdb *redis.Client) *Hub {
 	return &Hub{
-		Rooms:      make(map[int]map[*Client]bool),
+		Rooms:      make(map[string]map[*Client]bool),
 		Broadcast:  make(chan Message),
 		Register:   make(chan *Client),
 		Unregister: make(chan *Client),
@@ -84,7 +84,7 @@ func (h *Hub) run() {
 			}
 			h.Rooms[client.ChatroomID][client] = true
 			h.mu.Unlock()
-			fmt.Printf("User %d joined Chatroom %d\n", client.ID, client.ChatroomID)
+			fmt.Printf("User %d joined Chatroom %s\n", client.ID, client.ChatroomID)
 
 		case client := <-h.Unregister:
 			h.mu.Lock()
@@ -93,7 +93,7 @@ func (h *Hub) run() {
 				close(client.Send)
 			}
 			h.mu.Unlock()
-			fmt.Printf("User %d left Chatroom %d\n", client.ID, client.ChatroomID)
+			fmt.Printf("User %d left Chatroom %s\n", client.ID, client.ChatroomID)
 
 		case message := <-h.Broadcast:
 			h.mu.Lock()
@@ -160,9 +160,8 @@ func serveWs(hub *Hub, w http.ResponseWriter, r *http.Request) {
 	}
 
 	userID := 0
-	roomID := 0
+	roomID := r.URL.Query().Get("room_id")
 	fmt.Sscanf(r.URL.Query().Get("user_id"), "%d", &userID)
-	fmt.Sscanf(r.URL.Query().Get("room_id"), "%d", &roomID)
 
 	client := &Client{ID: userID, ChatroomID: roomID, Conn: conn, Send: make(chan Message, 256)}
 	hub.Register <- client
