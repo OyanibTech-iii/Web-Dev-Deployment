@@ -9,4 +9,5 @@ api_platform:
     formats:
         jsonld: [ 'application/ld+json' ]
         json: [ 'application/json' ]
-        jsonpatch: [ 'application/merge-patch+json', 'application/json' ]
+    patch_formats:
+        jsonmergepatch: [ 'application/merge-patch+json' ]
