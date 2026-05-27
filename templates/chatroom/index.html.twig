@@ -1,0 +1,415 @@
+{% extends 'base.html.twig' %}
+
+{% block title %}Community Chatroom | Growfico{% endblock %}
+
+{% block stylesheets %}
+{{ parent() }}
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 4px;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(3, 166, 74, 0.1);
+        border-radius: 10px;
+    }
+
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgba(3, 166, 74, 0.2);
+    }
+
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgba(3, 166, 74, 0.3);
+    }
+
+    /* Typing Dots Animation */
+    .typing-dots .dot {
+        animation: typing 1.4s infinite;
+        display: inline-block;
+        width: 4px;
+        height: 4px;
+        margin: 0 1px;
+        background-color: #6B7280;
+        border-radius: 50%;
+    }
+
+    .typing-dots span:nth-of-type(2) {
+        animation-delay: 0.2s;
+    }
+
+    .typing-dots span:nth-of-type(3) {
+        animation-delay: 0.4s;
+    }
+
+    @keyframes typing {
+        0%, 60%, 100% { transform: translateY(0); }
+        30% { transform: translateY(-4px); }
+    }
+
+    /* Carousel Styles */
+    .carousel-container {
+        display: flex;
+        overflow-x: auto;
+        gap: 1rem;
+        padding: 1rem;
+        -ms-overflow-style: none;
+        scrollbar-width: none;
+    }
+    .carousel-container::-webkit-scrollbar {
+        display: none;
+    }
+    .carousel-item {
+        flex: 0 0 auto;
+        width: 65px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+    }
+    .avatar-wrapper {
+        position: relative;
+        width: 50px;
+        height: 50px;
+        border-radius: 25px;
+        padding: 2px;
+        border: 2px solid transparent;
+        transition: all 0.2s;
+    }
+    .avatar-wrapper.active {
+        border-color: #16a34a;
+    }
+    .online-indicator {
+        position: absolute;
+        bottom: 2px;
+        right: 2px;
+        width: 12px;
+        height: 12px;
+        border-radius: 6px;
+        border: 2px solid #fff;
+        background-color: #16a34a;
+    }
+</style>
+{% endblock %}
+
+{% block body %}
+<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+    <!-- Header -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 sticky top-0 z-20">
+        <div class="max-w-4xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <a href="/" class="text-dark-forest-green dark:text-white">
+                    <ion-icon name="chevron-back" class="text-2xl"></ion-icon>
+                </a>
+                <div>
+                    <h1 class="text-base font-bold text-dark-forest-green dark:text-white leading-tight">
+                        {% if selectedUser %}
+                            Chat with {{ selectedUser.firstName }}
+                        {% else %}
+                            Growfico Community
+                        {% endif %}
+                    </h1>
+                    <div class="flex items-center gap-1.5">
+                        <span id="connection-dot" class="w-2 h-2 rounded-full bg-red-500"></span>
+                        <span id="connection-text" class="text-[10px] text-light-gray font-medium uppercase tracking-wider">Connecting...</span>
+                    </div>
+                </div>
+            </div>
+            <div class="w-10 h-10 rounded-xl bg-primary-50 dark:bg-primary-900/35 flex items-center justify-center text-bright-green shadow-sm">
+                <img src="{{ asset('logos/groupchatlogo.png')}}" alt="Chat Logo" class="w-6 h-6">
+            </div>
+        </div>
+    </div>
+
+    <!-- User Carousel -->
+    <div class="bg-white dark:bg-gray-800 border-b border-gray-100 dark:border-gray-700">
+        <div class="max-w-4xl mx-auto carousel-container">
+            <!-- General Chat Item -->
+            <a href="{{ path('app_chatroom') }}" class="carousel-item">
+                <div class="avatar-wrapper {{ not selectedUser ? 'active' : '' }}">
+                    <div class="w-full h-full rounded-full bg-dark-forest-green flex items-center justify-center text-white">
+                        <ion-icon name="people" class="text-xl"></ion-icon>
+                    </div>
+                </div>
+                <span class="text-[10px] mt-1 font-medium {{ not selectedUser ? 'text-bright-green font-bold' : 'text-light-gray' }}">General</span>
+            </a>
+
+            <!-- User Items -->
+            {% for u in users %}
+                {% if u != app.user %}
+                    <a href="{{ path('app_chatroom_private', {id: u.id}) }}" class="carousel-item">
+                        <div class="avatar-wrapper {{ selectedUser and selectedUser.id == u.id ? 'active' : '' }}">
+                            {% if u.profileImage %}
+                                <img src="{{ asset(u.profileImage) }}" alt="{{ u.firstName }}" class="w-full h-full rounded-full object-cover">
+                            {% else %}
+                                <div class="w-full h-full rounded-full bg-gray-200 dark:bg-gray-700 flex items-center justify-center text-xs font-bold text-gray-500">
+                                    {{ u.firstName|first|upper }}
+                                </div>
+                            {% endif %}
+                            <div class="online-indicator"></div>
+                        </div>
+                        <span class="text-[10px] mt-1 font-medium truncate w-full {{ selectedUser and selectedUser.id == u.id ? 'text-bright-green font-bold' : 'text-light-gray' }}">
+                            {{ u.firstName }}
+                        </span>
+                    </a>
+                {% endif %}
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Main Chat Area -->
+    <div class="flex-1 flex flex-col max-w-4xl mx-auto w-full bg-white dark:bg-gray-800 shadow-sm overflow-hidden">
+        <!-- Chat Messages -->
+        <div class="flex-1 overflow-y-auto p-4 space-y-4 bg-gray-50/30 dark:bg-gray-900/10 no-scrollbar" id="chat-messages">
+            <!-- System Welcome -->
+            <div class="flex justify-center">
+                <div class="px-4 py-1.5 rounded-full bg-primary-50 dark:bg-primary-900/35 border border-primary-100 dark:border-primary-800">
+                    <p class="text-[10px] font-bold text-bright-green uppercase tracking-widest">End-to-End Encrypted Community</p>
+                </div>
+            </div>
+
+            {% for msg in messages %}
+                {% set isMe = msg.sender == app.user %}
+                <div class="flex items-start gap-3 max-w-[85%] {{ isMe ? 'ml-auto flex-row-reverse' : '' }}">
+                    <div class="shrink-0 w-8 h-8 rounded-full {{ isMe ? 'bg-bright-green' : 'bg-gray-200 dark:bg-gray-700' }} overflow-hidden flex items-center justify-center text-[10px] font-bold {{ isMe ? 'text-white' : 'text-gray-500' }}">
+                        {% if msg.sender.profileImage %}
+                            <img src="{{ asset(msg.sender.profileImage) }}" class="w-full h-full object-cover">
+                        {% else %}
+                            {{ msg.sender.firstName|first|upper }}
+                        {% endif %}
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2 {{ isMe ? 'flex-row-reverse' : '' }}">
+                            <span class="text-[11px] font-bold text-dark-forest-green dark:text-white">{{ isMe ? 'You' : msg.sender.firstName }}</span>
+                            <span class="text-[9px] text-light-gray uppercase">{{ msg.sentAt|date('h:i A') }}</span>
+                        </div>
+                        <div class="px-4 py-2.5 rounded-2xl {{ isMe ? 'rounded-tr-none bg-bright-green text-white shadow-sm' : 'rounded-tl-none bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm' }}">
+                            <p class="text-xs leading-relaxed">{{ msg.content }}</p>
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+
+        <!-- Chat Input -->
+        <div class="p-4 bg-white dark:bg-gray-800 border-t border-gray-100 dark:border-gray-700 sticky bottom-0">
+            <form class="flex items-center gap-3" id="chat-form">
+                <div class="flex-1 flex items-center gap-2 bg-gray-50 dark:bg-gray-900 rounded-2xl px-4 py-1 border border-gray-200 dark:border-gray-700 focus-within:ring-2 focus-within:ring-bright-green/30 focus-within:border-bright-green transition-all">
+                    <input type="text" id="message-input" placeholder="Type a message..." autocomplete="off"
+                        class="flex-1 bg-transparent border-0 outline-none focus:ring-0 focus:outline-none focus:border-0 text-sm py-2 dark:text-white">
+                </div>
+                <button type="submit" id="send-button" disabled
+                    class="w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 text-white transition-all shrink-0">
+                    <ion-icon name="send" class="text-lg"></ion-icon>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', function () {
+        const chatMessages = document.getElementById('chat-messages');
+        const chatForm = document.getElementById('chat-form');
+        const messageInput = document.getElementById('message-input');
+        const sendButton = document.getElementById('send-button');
+        const connectionDot = document.getElementById('connection-dot');
+        const connectionText = document.getElementById('connection-text');
+
+        chatMessages.scrollTop = chatMessages.scrollHeight;
+
+        const userId = parseInt("{{ app.user.id|escape('js') }}");
+        const roomId = parseInt("{{ chatroom.id|escape('js') }}");
+        const userName = "{{ app.user.firstName|escape('js') }}";
+        const userImage = "{{ app.user.profileImage ? asset(app.user.profileImage)|escape('js') : '' }}";
+
+        const socket = new WebSocket(`wss://stunning-compassion-production-f5b5.up.railway.app/ws?user_id=${userId}&room_id=${roomId}`);
+        let typingTimeout;
+        let lastTypingSent = 0;
+
+        socket.onopen = function () {
+            console.log('Connected to chat server');
+            connectionDot.className = 'w-2 h-2 rounded-full bg-green-500';
+            connectionText.textContent = 'Connected';
+            updateSendButtonState();
+        };
+
+        socket.onclose = function () {
+            console.error('Disconnected from chat server');
+            connectionDot.className = 'w-2 h-2 rounded-full bg-red-500';
+            connectionText.textContent = 'Disconnected';
+            updateSendButtonState();
+        };
+
+        socket.onerror = function (err) {
+            console.error('WebSocket error:', err);
+        };
+
+        socket.onmessage = function (event) {
+            const data = JSON.parse(event.data);
+            if (data.type === 'typing') {
+                showTypingIndicator(data);
+            } else {
+                appendMessage(data);
+                removeTypingIndicator(data.sender_id);
+            }
+        };
+
+        messageInput.addEventListener('input', function () {
+            updateSendButtonState();
+            const now = Date.now();
+            if (now - lastTypingSent > 2000) {
+                sendTypingStatus();
+                lastTypingSent = now;
+            }
+        });
+
+        function updateSendButtonState() {
+            const isConnected = socket.readyState === WebSocket.OPEN;
+            const hasContent = messageInput.value.trim().length > 0;
+            sendButton.disabled = !isConnected || !hasContent;
+            
+            if (sendButton.disabled) {
+                sendButton.className = 'w-10 h-10 flex items-center justify-center rounded-full bg-gray-200 text-white transition-all shrink-0';
+            } else {
+                sendButton.className = 'w-10 h-10 flex items-center justify-center rounded-full bg-bright-green text-white transition-all shrink-0 shadow-md hover:scale-105';
+            }
+        }
+
+        function sendTypingStatus() {
+            if (socket.readyState === WebSocket.OPEN) {
+                socket.send(JSON.stringify({
+                    chatroom_id: roomId,
+                    sender_id: userId,
+                    sender_name: userName,
+                    sender_image: userImage,
+                    type: 'typing'
+                }));
+            }
+        }
+
+        function showTypingIndicator(data) {
+            if (data.sender_id === userId) return;
+
+            let indicator = document.getElementById(`typing-${data.sender_id}`);
+            if (indicator) {
+                clearTimeout(indicator.dataset.timeout);
+            } else {
+                const senderInitial = data.sender_name ? data.sender_name.charAt(0).toUpperCase() : 'U';
+                let avatarContent = senderInitial;
+                if (data.sender_image) {
+                    const imgPath = data.sender_image.startsWith('/') ? data.sender_image : '/' + data.sender_image;
+                    avatarContent = `<img src="${imgPath}" class="w-full h-full object-cover">`;
+                }
+
+                const indicatorHtml = `
+                <div id="typing-${data.sender_id}" class="flex items-start gap-3 max-w-[80%] typing-indicator-wrapper">
+                    <div class="shrink-0 w-8 h-8 rounded-full bg-gray-200 dark:bg-gray-700 overflow-hidden flex items-center justify-center text-[10px] font-bold text-gray-500">
+                        ${avatarContent}
+                    </div>
+                    <div class="space-y-1">
+                        <div class="flex items-center gap-2">
+                            <span class="text-[11px] font-bold text-dark-forest-green dark:text-white">${data.sender_name || 'Someone'}</span>
+                        </div>
+                        <div class="px-4 py-2 rounded-2xl rounded-tl-none bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-700 shadow-sm">
+                            <div class="typing-dots flex items-center h-3 gap-1">
+                                <span class="dot"></span><span class="dot"></span><span class="dot"></span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+                chatMessages.insertAdjacentHTML('beforeend', indicatorHtml);
+                chatMessages.scrollTop = chatMessages.scrollHeight;
+                indicator = document.getElementById(`typing-${data.sender_id}`);
+            }
+
+            indicator.dataset.timeout = setTimeout(() => {
+                removeTypingIndicator(data.sender_id);
+            }, 5000);
+        }
+
+        function removeTypingIndicator(senderId) {
+            const indicator = document.getElementById(`typing-${senderId}`);
+            if (indicator) {
+                indicator.remove();
+            }
+        }
+
+        chatForm.onsubmit = function (e) {
+            e.preventDefault();
+            handleSendMessage(messageInput.value.trim());
+        };
+
+        async function handleSendMessage(content) {
+            if (!content) return;
+
+            if (socket.readyState !== WebSocket.OPEN) {
+                alert('Connection to chat server lost. Please refresh.');
+                return;
+            }
+
+            const formData = new FormData();
+            formData.append('chatroom_id', roomId);
+            formData.append('content', content);
+
+            try {
+                const response = await fetch("{{ path('app_chatroom_save')|escape('js') }}", {
+                    method: 'POST',
+                    body: formData
+                });
+
+                if (response.ok) {
+                    messageInput.value = '';
+                    updateSendButtonState();
+                } else {
+                    console.error('Failed to save message');
+                }
+            } catch (err) {
+                console.error('Error sending message:', err);
+            }
+        }
+
+        function appendMessage(data) {
+            const isMe = data.sender_id === userId;
+            const time = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+
+            let messageContent = '';
+            if (data.content) {
+                messageContent += `<p class="text-xs leading-relaxed">${data.content}</p>`;
+            }
+
+            const senderInitial = data.sender_name ? data.sender_name.charAt(0).toUpperCase() : 'U';
+            let avatarContent = senderInitial;
+
+            if (data.sender_image) {
+                const imgPath = data.sender_image.startsWith('/') ? data.sender_image : '/' + data.sender_image;
+                avatarContent = `<img src="${imgPath}" class="w-full h-full object-cover">`;
+            }
+
+            const msgHtml = `
+            <div class="flex items-start gap-3 max-w-[85%] ${isMe ? 'ml-auto flex-row-reverse' : ''}">
+                <div class="shrink-0 w-8 h-8 rounded-full ${isMe ? 'bg-bright-green' : 'bg-gray-200 dark:bg-gray-700'} overflow-hidden flex items-center justify-center text-[10px] font-bold ${isMe ? 'text-white' : 'text-gray-500'}">
+                    ${avatarContent}
+                </div>
+                <div class="space-y-1">
+                    <div class="flex items-center gap-2 ${isMe ? 'flex-row-reverse' : ''}">
+                        <span class="text-[11px] font-bold text-dark-forest-green dark:text-white">${isMe ? 'You' : (data.sender_name || 'Someone')}</span>
+                        <span class="text-[9px] text-light-gray uppercase">${time}</span>
+                    </div>
+                    <div class="px-4 py-2.5 rounded-2xl ${isMe ? 'rounded-tr-none bg-bright-green text-white shadow-sm' : 'rounded-tl-none bg-white dark:bg-gray-800 border border-gray-100 dark:border-gray-600 shadow-sm'}">
+                        ${messageContent}
+                    </div>
+                </div>
+            </div>
+        `;
+
+            chatMessages.insertAdjacentHTML('beforeend', msgHtml);
+            chatMessages.scrollTop = chatMessages.scrollHeight;
+        }
+    });
+</script>
+{% endblock %}

@@ -20,7 +20,7 @@ class ChatMessageHandler
     {
         $response = match ($message->getType()) {
             ChatMessage::TYPE_FICOBOT => $this->ficoBotService->generateResponse($message->getContent()),
-            ChatMessage::TYPE_ADMIN => $this->handleAdminMessage($message),
+            ChatMessage::TYPE_ADMIN, ChatMessage::TYPE_USER => $this->handleAdminMessage($message),
             default => null,
         };
 

@@ -6,6 +6,7 @@ class ChatMessage
 {
     public const TYPE_FICOBOT = 'ficobot';
     public const TYPE_ADMIN = 'admin';
+    public const TYPE_USER = 'user';
 
     public function __construct(
         private string $content,
