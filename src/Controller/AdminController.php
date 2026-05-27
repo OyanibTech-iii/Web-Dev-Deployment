@@ -2,9 +2,12 @@
 
 namespace App\Controller;
 
+use App\Entity\ChatMessage;
+use App\Entity\Chatroom;
 use App\Repository\CourseRepository;
 use App\Repository\LessonRepository;
 use App\Repository\NotificationRepository;
+use App\Repository\UserRepository;
 use Doctrine\ORM\EntityManagerInterface;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\Request;
@@ -16,6 +19,35 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 #[IsGranted('ROLE_ADMIN')]
 final class AdminController extends AbstractController
 {
+
+    #[Route('/chatroom', name: 'app_admin_chatroom')]
+    public function chatroom(UserRepository $userRepository, EntityManagerInterface $em): Response
+    {
+        $users = $userRepository->findAll();
+        $chatroomRepo = $em->getRepository(Chatroom::class);
+        $chatroom = $chatroomRepo->findOneBy(['name' => 'Main Discussion']);
+
+        if (!$chatroom) {
+            $chatroom = new Chatroom();
+            $chatroom->setName('Main Discussion');
+            $em->persist($chatroom);
+            $em->flush();
+        }
+
+        $messages = $em->getRepository(ChatMessage::class)->findBy(
+            ['chatroom' => $chatroom],
+            ['sentAt' => 'ASC'],
+            50
+        );
+
+        return $this->render('admin/chatroom/index.html.twig', [
+            'user' => $this->getUser(),
+            'users' => $users,
+            'chatroom' => $chatroom,
+            'messages' => $messages,
+            'selectedUser' => null,
+        ]);
+    }
 
     #[Route('/settings', name: 'app_admin_settings')]
     public function settings(): Response
