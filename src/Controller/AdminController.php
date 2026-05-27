@@ -20,28 +20,28 @@ use Symfony\Component\Security\Http\Attribute\IsGranted;
 final class AdminController extends AbstractController
 {
 
-    #[Route(\'/chatroom\', name: \'app_admin_chatroom\')]
+    #[Route('/chatroom', name: 'app_admin_chatroom')]
     public function chatroom(UserRepository $userRepository, EntityManagerInterface $em): Response
     {
-        return $this->showAdminChatroom(\'Main Discussion\', $userRepository, $em);
+        return $this->showAdminChatroom('Main Discussion', $userRepository, $em);
     }
 
-    #[Route(\'/chatroom/private/{id}\', name: \'app_admin_chatroom_private\')]
+    #[Route('/chatroom/private/{id}', name: 'app_admin_chatroom_private')]
     public function privateChat(int $id, UserRepository $userRepository, EntityManagerInterface $em): Response
     {
         $targetUser = $userRepository->find($id);
         if (!$targetUser) {
-            return $this->redirectToRoute(\'app_admin_chatroom\');
+            return $this->redirectToRoute('app_admin_chatroom');
         }
 
         if ($targetUser === $this->getUser()) {
-            return $this->redirectToRoute(\'app_admin_chatroom\');
+            return $this->redirectToRoute('app_admin_chatroom');
         }
 
         // Create a unique name for 1-on-1 chat
         $userIds = [$this->getUser()->getId(), $targetUser->getId()];
         sort($userIds);
-        $chatroomName = \'Private Chat: \' . implode(\'-\', $userIds);
+        $chatroomName = 'Private Chat: ' . implode('-', $userIds);
 
         return $this->showAdminChatroom($chatroomName, $userRepository, $em, $targetUser);
     }
@@ -50,7 +50,7 @@ final class AdminController extends AbstractController
     {
         $users = $userRepository->findAll();
         $chatroomRepo = $em->getRepository(Chatroom::class);
-        $chatroom = $chatroomRepo->findOneBy([\'name\' => $name]);
+        $chatroom = $chatroomRepo->findOneBy(['name' => $name]);
 
         if (!$chatroom) {
             $chatroom = new Chatroom();
@@ -60,17 +60,17 @@ final class AdminController extends AbstractController
         }
 
         $messages = $em->getRepository(ChatMessage::class)->findBy(
-            [\'chatroom\' => $chatroom],
-            [\'sentAt\' => \'ASC\'],
+            ['chatroom' => $chatroom],
+            ['sentAt' => 'ASC'],
             50
         );
 
-        return $this->render(\'admin/chatroom/index.html.twig\', [
-            \'user\' => $this->getUser(),
-            \'users\' => $users,
-            \'chatroom\' => $chatroom,
-            \'messages\' => $messages,
-            \'selectedUser\' => $selectedUser,
+        return $this->render('admin/chatroom/index.html.twig', [
+            'user' => $this->getUser(),
+            'users' => $users,
+            'chatroom' => $chatroom,
+            'messages' => $messages,
+            'selectedUser' => $selectedUser,
         ]);
     }
 
