@@ -45,11 +45,13 @@ class ApiChatroomController extends AbstractController
     #[Route('/{id}', name: 'api_chatroom_show', methods: ['GET'])]
     #[IsGranted('ROLE_USER')]
     public function getMessages(
-        int $id,
+        string $id,
         ChatroomRepository $chatroomRepo,
         ChatMessageRepository $messageRepo
     ): JsonResponse {
-        $chatroom = $chatroomRepo->find($id);
+        // Find by ID if numeric, otherwise find by Name
+        $chatroom = is_numeric($id) ? $chatroomRepo->find((int)$id) : $chatroomRepo->findOneBy(['name' => $id]);
+
         if (!$chatroom) {
             return new JsonResponse(['status' => 'error', 'message' => 'Chatroom not found'], 404);
         }
