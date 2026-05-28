@@ -2,7 +2,11 @@
 
 namespace App\Controller\Api;
 
+use App\Entity\ChatMessage;
+use App\Entity\Chatroom;
 use App\Message\ChatMessage as ChatMessageBus;
+use App\Repository\ChatMessageRepository;
+use App\Repository\ChatroomRepository;
 use Symfony\Bundle\FrameworkBundle\Controller\AbstractController;
 use Symfony\Component\HttpFoundation\JsonResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -36,5 +40,36 @@ class ApiChatroomController extends AbstractController
         ));
 
         return new JsonResponse(['status' => 'success']);
+    }
+
+    #[Route('/{id}', name: 'api_chatroom_show', methods: ['GET'])]
+    #[IsGranted('ROLE_USER')]
+    public function getMessages(
+        int $id,
+        ChatroomRepository $chatroomRepo,
+        ChatMessageRepository $messageRepo
+    ): JsonResponse {
+        $chatroom = $chatroomRepo->find($id);
+        if (!$chatroom) {
+            return new JsonResponse(['status' => 'error', 'message' => 'Chatroom not found'], 404);
+        }
+
+        $messages = $messageRepo->findBy(
+            ['chatroom' => $chatroom],
+            ['sentAt' => 'ASC'],
+            50
+        );
+
+        $data = array_map(function (ChatMessage $msg) {
+            return [
+                'id' => $msg->getId(),
+                'content' => $msg->getContent(),
+                'sender_id' => $msg->getSender()->getId(),
+                'sender_name' => $msg->getSender()->getFirstName() ?? $msg->getSender()->getEmail(),
+                'timestamp' => $msg->getSentAt()->format(\DateTime::ATOM),
+            ];
+        }, $messages);
+
+        return new JsonResponse($data);
     }
 }
