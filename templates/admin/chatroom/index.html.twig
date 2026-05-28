@@ -220,7 +220,7 @@
         chatMessages.scrollTop = chatMessages.scrollHeight;
 
         const userId = parseInt("{{ app.user.id|escape('js') }}");
-        const roomId = parseInt("{{ chatroom.id|escape('js') }}");
+        const roomId = "{{ chatroom.name|escape('js') }}";
         const userName = "{{ app.user.firstName|escape('js') }}";
         const userImage = "{{ app.user.profileImage ? asset(app.user.profileImage)|escape('js') : '' }}";
 

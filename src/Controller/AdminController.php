@@ -2,6 +2,7 @@
 
 namespace App\Controller;
 
+use App\Entity\User;
 use App\Entity\ChatMessage;
 use App\Entity\Chatroom;
 use App\Repository\CourseRepository;
@@ -38,15 +39,15 @@ final class AdminController extends AbstractController
             return $this->redirectToRoute('app_admin_chatroom');
         }
 
-        // Create a unique name for 1-on-1 chat
+        // Create a unique name for 1-on-1 chat - Unified with mobile
         $userIds = [$this->getUser()->getId(), $targetUser->getId()];
         sort($userIds);
-        $chatroomName = 'Private Chat: ' . implode('-', $userIds);
+        $chatroomName = 'private_' . implode('_', $userIds);
 
-        return $this->showAdminChatroom($chatroomName, $userRepository, $em, $targetUser);
+        return $this->showAdminChatroom($chatroomName, $userRepository, $em, [$this->getUser(), $targetUser], $targetUser);
     }
 
-    private function showAdminChatroom(string $name, UserRepository $userRepository, EntityManagerInterface $em, ?User $selectedUser = null): Response
+    private function showAdminChatroom(string $name, UserRepository $userRepository, EntityManagerInterface $em, array $participants = [], ?User $selectedUser = null): Response
     {
         $users = $userRepository->findAll();
         $chatroomRepo = $em->getRepository(Chatroom::class);
@@ -55,6 +56,11 @@ final class AdminController extends AbstractController
         if (!$chatroom) {
             $chatroom = new Chatroom();
             $chatroom->setName($name);
+            
+            foreach ($participants as $participant) {
+                $chatroom->addParticipant($participant);
+            }
+            
             $em->persist($chatroom);
             $em->flush();
         }

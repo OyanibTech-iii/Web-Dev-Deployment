@@ -39,10 +39,10 @@ class ChatroomController extends AbstractController
             return $this->redirectToRoute('app_chatroom');
         }
 
-        // Create a unique name for 1-on-1 chat
+        // Create a unique name for 1-on-1 chat - Unified with mobile
         $userIds = [$this->getUser()->getId(), $targetUser->getId()];
         sort($userIds);
-        $chatroomName = 'Private Chat: ' . implode('-', $userIds);
+        $chatroomName = 'private_' . implode('_', $userIds);
 
         return $this->showChatroom($chatroomName, $userRepository, $em, [$this->getUser(), $targetUser], $targetUser);
     }
@@ -104,7 +104,7 @@ class ChatroomController extends AbstractController
             (string)$content,
             ChatMessageBus::TYPE_USER,
             [
-                'chatroom_id' => (int)$chatroomId,
+                'chatroom_id' => $chatroomId,
                 'sender_id' => $this->getUser()->getId(),
             ]
         ));
