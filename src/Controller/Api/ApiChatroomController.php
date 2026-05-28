@@ -49,26 +49,34 @@ class ApiChatroomController extends AbstractController
         ChatroomRepository $chatroomRepo,
         ChatMessageRepository $messageRepo
     ): JsonResponse {
-        // Find by ID if numeric, otherwise find by Name
+        // 1. Find the chatroom
         $chatroom = is_numeric($id) ? $chatroomRepo->find((int)$id) : $chatroomRepo->findOneBy(['name' => $id]);
 
         if (!$chatroom) {
             return new JsonResponse(['status' => 'error', 'message' => 'Chatroom not found'], 404);
         }
 
-        $messages = $messageRepo->findBy(
-            ['chatroom' => $chatroom],
-            ['sentAt' => 'ASC'],
-            50
-        );
+        // 2. Fetch messages
+        $messages = $messageRepo->findBy(['chatroom' => $chatroom], ['sentAt' => 'ASC'], 50);
 
+        // 3. Map safely with NULL checks
         $data = array_map(function (ChatMessage $msg) {
+            $sender = $msg->getSender();
+
+            // PREVENT 500: Check if sender exists
+            $senderId = $sender ? $sender->getId() : 0;
+            $senderName = 'User';
+            if ($sender) {
+                $senderName = $sender->getFirstName() ?? $sender->getEmail() ?? 'User';
+            }
+
             return [
                 'id' => $msg->getId(),
                 'content' => $msg->getContent(),
-                'sender_id' => $msg->getSender()->getId(),
-                'sender_name' => $msg->getSender()->getFirstName() ?? $msg->getSender()->getEmail(),
-                'timestamp' => $msg->getSentAt()->format(\DateTime::ATOM),
+                'sender_id' => $senderId,
+                'sender_name' => $senderName,
+                // PREVENT 500: Check if sentAt exists
+                'timestamp' => $msg->getSentAt() ? $msg->getSentAt()->format(\DateTime::ATOM) : date(\DateTime::ATOM),
             ];
         }, $messages);
 
