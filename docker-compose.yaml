@@ -14,11 +14,14 @@ services:
       - ./var:/app/var
     environment:
       DATABASE_URL: "mysql://${MYSQL_USER}:${MYSQL_PASSWORD}@db:3306/${MYSQL_DATABASE}?serverVersion=8.0.32&charset=utf8mb4"
+      REDIS_URL: "redis://redis:6379"
       APP_ENV: prod
       APP_DEBUG: "false"
     depends_on:
       db:
         condition: service_healthy
+      redis:
+        condition: service_started
     networks:
       - platform-network
     healthcheck:
@@ -27,6 +30,32 @@ services:
       timeout: 5s
       retries: 3
       start_period: 10s
+
+  redis:
+    image: redis:alpine
+    container_name: platform_b_redis
+    networks:
+      - platform-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  chat:
+    build:
+      context: ./microservices/chat
+    container_name: platform_b_chat
+    environment:
+      - FIREBASE_SERVICE_ACCOUNT_PATH=/app/service-account.json
+      - REDIS_URL=redis://redis:6379
+    volumes:
+      - ./microservices/chat/firebase-service-account.json:/app/service-account.json
+    depends_on:
+      redis:
+        condition: service_healthy
+    networks:
+      - platform-network
 
 networks:
   platform-network:
