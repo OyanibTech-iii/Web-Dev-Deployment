@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"encoding/json"
 	"fmt"
 	"log"
 	"net/http"
@@ -100,7 +101,18 @@ func (h *NotificationHub) ListenRedis() {
 
 	ch := pubsub.Channel()
 	for msg := range ch {
+		// Broadcast to WebSockets
 		h.Broadcast <- []byte(msg.Payload)
+
+		// Handle Push Notifications (Order updates, etc.)
+		var data struct {
+			FcmToken string `json:"fcm_token"`
+			Title    string `json:"title"`
+			Message  string `json:"message"`
+		}
+		if err := json.Unmarshal([]byte(msg.Payload), &data); err == nil && data.FcmToken != "" {
+			go sendPushNotification(data.FcmToken, data.Title, data.Message)
+		}
 	}
 }
 
