@@ -22,12 +22,13 @@ var upgrader = websocket.Upgrader{
 }
 
 type Message struct {
-	ChatroomID  string `json:"chatroom_id"`
-	SenderID    int    `json:"sender_id"`
-	SenderName  string `json:"sender_name"`
-	SenderImage string `json:"sender_image"`
-	Content     string `json:"content"`
-	Type        string `json:"type"` // "message", "join", or "typing"
+	ChatroomID      string   `json:"chatroom_id"`
+	SenderID        int      `json:"sender_id"`
+	SenderName      string   `json:"sender_name"`
+	SenderImage     string   `json:"sender_image"`
+	Content         string   `json:"content"`
+	Type            string   `json:"type"`             // "message", "join", or "typing"
+	RecipientTokens []string `json:"recipient_tokens"` // FCM tokens for push notifications
 }
 
 type Client struct {
@@ -98,15 +99,28 @@ func (h *Hub) run() {
 		case message := <-h.Broadcast:
 			h.mu.Lock()
 			clients := h.Rooms[message.ChatroomID]
+			
+			// Track which recipients received the message via WebSocket
+			onlineUsers := make(map[int]bool)
 			for client := range clients {
 				select {
 				case client.Send <- message:
+					onlineUsers[client.ID] = true
 				default:
 					close(client.Send)
 					delete(h.Rooms[message.ChatroomID], client)
 				}
 			}
 			h.mu.Unlock()
+
+			// Send push notifications to recipients (especially if they are offline)
+			// Note: We might want to send even if they are online depending on app requirements
+			for _, token := range message.RecipientTokens {
+				// We don't easily know which user ID belongs to which token here without more data,
+				// but Symfony already filtered tokens. 
+				// To be safe, we send push notifications.
+				go sendPushNotification(token, message.SenderName, message.Content)
+			}
 		}
 	}
 }

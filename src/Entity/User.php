@@ -151,14 +151,28 @@ class User implements UserInterface, PasswordAuthenticatedUserInterface
     #[Groups(['user:read'])]
     private ?UserProfile $userProfile = null;
 
-    public function __construct()
-    {
+    #[ORM\Column(length: 255, nullable: true)]
+    #[Groups(['user:read', 'user:write'])]
+    private ?string $fcmToken = null;
+
+    public function __construct() {
         $this->createdAt = new \DateTimeImmutable();
         $this->enrolledCourses = new ArrayCollection();
         $this->enrollments = new ArrayCollection();
         $this->quizAttempts = new ArrayCollection();
         $this->certificates = new ArrayCollection();
         $this->reviews = new ArrayCollection();
+    }
+
+    public function getFcmToken(): ?string
+    {
+        return $this->fcmToken;
+    }
+
+    public function setFcmToken(?string $fcmToken): static
+    {
+        $this->fcmToken = $fcmToken;
+        return $this;
     }
 
     public function getId(): ?int

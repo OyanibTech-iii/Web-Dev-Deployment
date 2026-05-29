@@ -54,6 +54,14 @@ class AdminChatService
         $this->entityManager->persist($message);
         $this->entityManager->flush();
 
+        // Collect FCM tokens for push notifications
+        $recipientTokens = [];
+        foreach ($chatroom->getParticipants() as $participant) {
+            if ($participant->getId() !== $senderId && $participant->getFcmToken()) {
+                $recipientTokens[] = $participant->getFcmToken();
+            }
+        }
+
         // Publish to Redis for real-time delivery via Go microservice
         $this->redis->publish('chat', json_encode([
             'chatroom_id' => $chatroomId,
@@ -61,7 +69,8 @@ class AdminChatService
             'sender_name' => $sender->getFirstName(),
             'sender_image' => $sender->getProfileImage(),
             'content' => $content,
-            'type' => 'message'
+            'type' => 'message',
+            'recipient_tokens' => $recipientTokens
         ]));
     }
 }
