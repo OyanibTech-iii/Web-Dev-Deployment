@@ -49,6 +49,17 @@ class OrderEventSubscriber implements EventSubscriberInterface
                 'high'
             );
         }
+
+        // Also notify the customer that their order was created
+        if ($entity->getCustomer()) {
+            $this->notificationService->create(
+                $entity->getCustomer(),
+                'Order Placed',
+                'Your order #' . $entity->getId() . ' has been placed successfully!',
+                'order',
+                'medium'
+            );
+        }
     }
 
     public function postUpdate(PostUpdateEventArgs $args): void
