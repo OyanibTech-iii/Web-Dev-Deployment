@@ -56,8 +56,9 @@ class ApiChatroomController extends AbstractController
             return new JsonResponse(['status' => 'error', 'message' => 'Chatroom not found'], 404);
         }
 
-        // 2. Fetch messages
-        $messages = $messageRepo->findBy(['chatroom' => $chatroom], ['sentAt' => 'ASC'], 50);
+        // 2. Fetch messages (latest 50, then reverse to chronological)
+        $messages = $messageRepo->findBy(['chatroom' => $chatroom], ['sentAt' => 'DESC'], 50);
+        $messages = array_reverse($messages);
 
         // 3. Map safely with NULL checks
         $data = array_map(function (ChatMessage $msg) {

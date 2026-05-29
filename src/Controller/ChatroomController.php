@@ -77,9 +77,10 @@ class ChatroomController extends AbstractController
         // Fetch last 50 messages
         $messages = $em->getRepository(ChatMessage::class)->findBy(
             ['chatroom' => $chatroom],
-            ['sentAt' => 'ASC'],
+            ['sentAt' => 'DESC'],
             50
         );
+        $messages = array_reverse($messages);
 
         return $this->render('chatroom/index.html.twig', [
             'user' => $this->getUser(),
