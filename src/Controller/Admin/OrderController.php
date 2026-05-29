@@ -22,6 +22,15 @@ class OrderController extends AbstractController
         ]);
     }
 
+    #[Route('/table', name: 'app_admin_order_table', methods: ['GET'])]
+    public function table(OrderRepository $orderRepository): Response
+    {
+        return $this->render('admin/order.html.twig', [
+            'orders' => $orderRepository->findBy([], ['createdAt' => 'DESC']),
+            'only_table' => true,
+        ]);
+    }
+
     #[Route('/new', name: 'app_admin_order_new', methods: ['GET', 'POST'])]
     public function new(Request $request, EntityManagerInterface $entityManager, NotificationService $notificationService): Response
     {

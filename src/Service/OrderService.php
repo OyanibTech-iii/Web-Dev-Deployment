@@ -41,18 +41,6 @@ class OrderService
             }
         }
 
-        // Create notification for admin user
-        $adminUser = $this->userRepository->findOneBy(['roles' => 'ROLE_ADMIN']);
-        if ($adminUser) {
-            $this->notificationService->create(
-                $adminUser,
-                'Order Completed',
-                'Order #' . $order->getId() . ' has been successfully completed.',
-                'order',
-                'high'
-            );
-        }
-
         $this->entityManager->flush();
     }
 
