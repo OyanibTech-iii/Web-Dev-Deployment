@@ -91,41 +91,44 @@
 
             const searchInput = document.getElementById(SEARCH_INPUT_ID);
             if (searchInput) {
+                // Apply current search value if exists
                 if (searchInput.value) {
                     dataTable.search(searchInput.value).draw();
                 }
                 
-                searchInput.addEventListener('keyup', function () {
-                    dataTable.search(this.value).draw();
-                });
+                // Only attach listener once
+                if (!searchInput.dataset.listenerAttached) {
+                    searchInput.addEventListener('keyup', function () {
+                        if (dataTable) {
+                            dataTable.search(this.value).draw();
+                        }
+                    });
+                    searchInput.dataset.listenerAttached = 'true';
+                }
             }
         }
 
-        function setupRealtimeOrders() {
-            const socket = new WebSocket('wss://stunning-compassion-production-f5b5.up.railway.app/notifications-ws');
-            
-            socket.onmessage = function(event) {
-                try {
-                    const data = JSON.parse(event.data);
-                    if (data.type === 'order') {
-                        console.log('Real-time order update received, refreshing table...');
-                        refreshOrdersTable();
-                    }
-                } catch (e) {
-                    console.error('Error parsing notification:', e);
-                }
-            };
+        let pollingInterval = null;
+        const POLLING_DELAY = 10000; // 10 seconds
 
-            socket.onclose = function() {
-                console.log('Order notification socket closed. Reconnecting in 5s...');
-                setTimeout(setupRealtimeOrders, 5000);
-            };
+        function startPolling() {
+            stopPolling();
+            pollingInterval = setInterval(refreshOrdersTable, POLLING_DELAY);
+        }
+
+        function stopPolling() {
+            if (pollingInterval) {
+                clearInterval(pollingInterval);
+                pollingInterval = null;
+            }
         }
 
         function refreshOrdersTable() {
             const container = document.getElementById('orders-table-container');
             if (!container) return;
 
+            // Optional: Show a subtle loading indicator
+            
             fetch('{{ path("app_admin_order_table") }}')
                 .then(response => response.text())
                 .then(html => {
@@ -134,6 +137,7 @@
                     const newContainer = doc.getElementById('orders-table-container');
                     
                     if (newContainer) {
+                        // Preserve the scroll position if needed, though usually not for polling tables
                         container.innerHTML = newContainer.innerHTML;
                         initOrdersDataTable(); 
                     }
@@ -144,12 +148,21 @@
         if (document.readyState === 'loading') {
             document.addEventListener('DOMContentLoaded', () => {
                 initOrdersDataTable();
-                setupRealtimeOrders();
+                startPolling();
             });
         } else {
             initOrdersDataTable();
-            setupRealtimeOrders();
+            startPolling();
         }
+
+        // Stop polling when the user leaves the page or the tab is hidden
+        document.addEventListener('visibilitychange', () => {
+            if (document.hidden) {
+                stopPolling();
+            } else {
+                startPolling();
+            }
+        });
     })();
 </script>
 {% endblock %}

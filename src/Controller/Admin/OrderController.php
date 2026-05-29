@@ -46,15 +46,6 @@ class OrderController extends AbstractController
             $entityManager->persist($order);
             $entityManager->flush();
 
-            // Create notification for the current admin user
-            $notificationService->create(
-                $this->getUser(),
-                'New Order Created',
-                'Order #' . $order->getId() . ' has been created.',
-                'order',
-                'medium'
-            );
-
             return $this->redirectToRoute('app_admin_order', [], Response::HTTP_SEE_OTHER);
         }
 

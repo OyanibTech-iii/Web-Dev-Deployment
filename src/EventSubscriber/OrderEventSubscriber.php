@@ -34,21 +34,11 @@ class OrderEventSubscriber implements EventSubscriberInterface
         }
 
         // Notify admins about new order
-        $admins = $this->userRepository->createQueryBuilder('u')
-            ->where('u.roles LIKE :role')
-            ->setParameter('role', '%ROLE_ADMIN%')
-            ->getQuery()
-            ->getResult();
-
-        foreach ($admins as $admin) {
-            $this->notificationService->create(
-                $admin,
-                'New Order #' . $entity->getId(),
-                'A new order has been placed by ' . ($entity->getCustomer() ? $entity->getCustomer()->getFullName() : 'Guest'),
-                'order',
-                'high'
-            );
-        }
+        $this->notifyAdmins(
+            'New Order #' . $entity->getId(),
+            'A new order has been placed by ' . ($entity->getCustomer() ? $entity->getCustomer()->getFullName() : 'Guest'),
+            $entity
+        );
 
         // Also notify the customer that their order was created
         if ($entity->getCustomer()) {
@@ -76,6 +66,13 @@ class OrderEventSubscriber implements EventSubscriberInterface
             $oldStatus = $changeSet['status'][0];
             $newStatus = $changeSet['status'][1];
 
+            // Notify admins about status update (important for real-time table refresh)
+            $this->notifyAdmins(
+                'Order #' . $entity->getId() . ' Status Updated',
+                'Order status changed from ' . $oldStatus . ' to ' . $newStatus . '.',
+                $entity
+            );
+
             if ($entity->getCustomer()) {
                 $this->notificationService->create(
                     $entity->getCustomer(),
@@ -85,6 +82,32 @@ class OrderEventSubscriber implements EventSubscriberInterface
                     'medium'
                 );
             }
+        }
+    }
+
+    /**
+     * Helper to notify all admins
+     */
+    private function notifyAdmins(string $title, string $message, Order $order): void
+    {
+        // Fetch all users with ROLE_ADMIN or ROLE_SUPER_ADMIN
+        // Using a more robust LIKE pattern for JSON roles
+        $admins = $this->userRepository->createQueryBuilder('u')
+            ->where('u.roles LIKE :admin')
+            ->orWhere('u.roles LIKE :superadmin')
+            ->setParameter('admin', '%"ROLE_ADMIN"%')
+            ->setParameter('superadmin', '%"ROLE_SUPER_ADMIN"%')
+            ->getQuery()
+            ->getResult();
+
+        foreach ($admins as $admin) {
+            $this->notificationService->create(
+                $admin,
+                $title,
+                $message,
+                'order',
+                'high'
+            );
         }
     }
 }
