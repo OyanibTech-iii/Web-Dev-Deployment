@@ -1,6 +1,8 @@
-{% extends 'base.html.twig' %}
+{% extends 'user_page/base_user.html.twig' %}
 
 {% block title %}Community Chatroom | Growfico{% endblock %}
+{% block page_title %}Community{% endblock %}
+{% block page_subtitle %}Connect and share with other members{% endblock %}
 
 {% block stylesheets %}
 {{ parent() }}
@@ -95,15 +97,12 @@
 </style>
 {% endblock %}
 
-{% block body %}
-<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+{% block user_content %}
+<div class="bg-gray-50 dark:bg-gray-900 flex flex-col h-[calc(100vh-210px)] rounded-2xl overflow-hidden shadow-sm border border-gray-200 dark:border-gray-700">
     <!-- Header -->
     <div class="bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 p-4 sticky top-0 z-20">
         <div class="max-w-4xl mx-auto flex items-center justify-between">
             <div class="flex items-center gap-3">
-                <a href="/" class="text-dark-forest-green dark:text-white">
-                    <ion-icon name="chevron-back" class="text-2xl"></ion-icon>
-                </a>
                 <div>
                     <h1 class="text-base font-bold text-dark-forest-green dark:text-white leading-tight">
                         {% if selectedUser %}
@@ -209,7 +208,9 @@
         </div>
     </div>
 </div>
+{% endblock %}
 
+{% block extra_scripts %}
 <script>
     document.addEventListener('DOMContentLoaded', function () {
         const chatMessages = document.getElementById('chat-messages');
