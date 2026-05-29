@@ -25,9 +25,8 @@ class OrderController extends AbstractController
     #[Route('/table', name: 'app_admin_order_table', methods: ['GET'])]
     public function table(OrderRepository $orderRepository): Response
     {
-        return $this->render('admin/order.html.twig', [
+        return $this->render('admin/_order_table.html.twig', [
             'orders' => $orderRepository->findBy([], ['createdAt' => 'DESC']),
-            'only_table' => true,
         ]);
     }
 
